@@ -37,7 +37,6 @@ common all
         FlexibleInstances
         LambdaCase
         MultiParamTypeClasses
-        OverloadedRecordDot
         OverloadedStrings
         RankNTypes
         ScopedTypeVariables
@@ -62,17 +61,27 @@ library
         Paths_unleash_client_haskell
     hs-source-dirs: src
     build-depends:
-        aeson >= 2.0.3 && < 2.2,
+        aeson,
+        --  >= 2.0.3 && < 2.2,
         base >= 4.7 && < 5,
-        containers >= 0.6.4 && < 0.7,
-        mtl >= 2.2.2 && < 2.3,
-        text >= 1.2.5 && < 2.1,
-        time >= 1.9.3 && < 1.13,
-        http-client-tls >= 0.3.6 && < 0.4,
-        http-media >= 0.8.0 && < 0.9,
-        servant >= 0.19.1 && < 0.20,
-        servant-client >= 0.19 && < 0.20,
-        unleash-client-haskell-core >= 0.8.7 && < 0.11,
+        containers, 
+        -- >= 0.6.4 && < 0.7,
+        mtl,
+        --  >= 2.2.2 && < 2.3,
+        text, 
+        --  >= 1.2.5 && < 2.1,
+        time, 
+        --  >= 1.9.3 && < 1.13,
+        http-client-tls,
+        --  >= 0.3.6 && < 0.4,
+        http-media, 
+        --  >= 0.8.0 && < 0.9,
+        servant, 
+        --  >= 0.19.1 && < 0.20,
+        servant-client, 
+        --  >= 0.19 && < 0.20,
+        unleash-client-haskell-core, 
+        --  >= 0.8.7 && < 0.11,
 
 executable example
     import: all

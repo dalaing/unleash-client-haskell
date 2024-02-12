@@ -50,15 +50,15 @@ instance {-# OVERLAPPABLE #-} ToJSON a => MimeRender CustomJSON a where
     mimeRender _ = encode
 
 register :: MonadIO m => ClientEnv -> Maybe ApiKey -> RegisterPayload -> m (Either ClientError NoContent)
-register clientEnv apiKey registerPayload = do
+register clientEnv apiKey (UJT.RegisterPayload appName instanceId started intervalSeconds) = do
     let fullRegisterPayload =
             FullRegisterPayload
-                { appName = registerPayload.appName,
-                  instanceId = registerPayload.instanceId,
+                { appName = appName,
+                  instanceId = instanceId,
                   sdkVersion = "unleash-client-haskell:" <> (T.pack . showVersion) version,
                   strategies = supportedStrategies,
-                  started = registerPayload.started,
-                  interval = registerPayload.intervalSeconds * 1000
+                  started = started,
+                  interval = intervalSeconds * 1000
                 }
     liftIO $ runClientM (register' apiKey (Just "application/json") fullRegisterPayload) clientEnv
 
@@ -68,19 +68,19 @@ getAllClientFeatures clientEnv apiKey = do
     pure $ fromJsonFeatures <$> eitherFeatures
 
 sendMetrics :: MonadIO m => ClientEnv -> Maybe ApiKey -> MetricsPayload -> m (Either ClientError NoContent)
-sendMetrics clientEnv apiKey metricsPayload = do
+sendMetrics clientEnv apiKey (UJT.MetricsPayload appName instanceId start stop toggles) = do
     liftIO $ runClientM (sendMetrics' apiKey fullMetricsPayload) clientEnv
     where
         fullMetricsPayload :: FullMetricsPayload
         fullMetricsPayload =
             FullMetricsPayload
-                { appName = metricsPayload.appName,
-                  instanceId = metricsPayload.instanceId,
+                { appName = appName,
+                  instanceId = instanceId,
                   bucket =
                     FullMetricsBucket
-                        { start = metricsPayload.start,
-                          stop = metricsPayload.stop,
-                          toggles = makeMapOfYesAndNoes metricsPayload.toggles
+                        { start = start,
+                          stop = stop,
+                          toggles = makeMapOfYesAndNoes toggles
                         }
                 }
         makeMapOfYesAndNoes :: [(Text, Bool)] -> Map Text YesAndNoes

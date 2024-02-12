@@ -33,7 +33,8 @@ import Data.Text (Text)
 import Data.Time (UTCTime, getCurrentTime)
 import Network.HTTP.Client.TLS (newTlsManager)
 import Servant.Client (BaseUrl, ClientEnv, ClientError, mkClientEnv)
-import Unleash (Context (..), Features, MetricsPayload (..), RegisterPayload (..), VariantResponse (..), emptyContext, emptyVariantResponse, featureGetVariant, featureIsEnabled)
+import Unleash (Context (..), Features, MetricsPayload(MetricsPayload), RegisterPayload(RegisterPayload), VariantResponse(VariantResponse), emptyContext, emptyVariantResponse, featureGetVariant, featureIsEnabled)
+import qualified Unleash
 import Unleash.Internal.HttpClient (getAllClientFeatures, register, sendMetrics)
 
 -- | Smart constructor for Unleash client configuration. Initializes the mutable variables properly.
@@ -102,19 +103,19 @@ registerClient = do
     let registrationPayload :: RegisterPayload
         registrationPayload =
             RegisterPayload
-                { appName = config.applicationName,
-                  instanceId = config.instanceId,
+                { appName = applicationName config,
+                  instanceId = instanceId config,
                   started = now,
-                  intervalSeconds = config.metricsPushIntervalInSeconds
+                  intervalSeconds = metricsPushIntervalInSeconds config
                 }
-    void <$> register config.httpClientEnvironment config.apiKey registrationPayload
+    void <$> register (httpClientEnvironment config) (apiKey config) registrationPayload
 
 -- | Fetch the most recent feature toggle set from the Unleash server. Meant to be run every statePollIntervalInSeconds. Non-blocking.
 pollToggles :: (HasUnleash r, MonadReader r m, MonadIO m) => m (Either ClientError ())
 pollToggles = do
     config <- asks getUnleashConfig
-    eitherFeatures <- getAllClientFeatures config.httpClientEnvironment config.apiKey
-    either (const $ pure ()) (updateState config.state) eitherFeatures
+    eitherFeatures <- getAllClientFeatures (httpClientEnvironment config) (apiKey config)
+    either (const $ pure ()) (updateState $ state config) eitherFeatures
     pure . void $ eitherFeatures
     where
         updateState state value = do
@@ -126,17 +127,17 @@ pushMetrics :: (HasUnleash r, MonadReader r m, MonadIO m) => m (Either ClientErr
 pushMetrics = do
     config <- asks getUnleashConfig
     now <- liftIO getCurrentTime
-    lastBucketStart <- liftIO $ swapMVar config.metricsBucketStart now
-    bucket <- liftIO $ swapMVar config.metrics mempty
+    lastBucketStart <- liftIO $ swapMVar (metricsBucketStart config) now
+    bucket <- liftIO $ swapMVar (metrics config) mempty
     let metricsPayload =
             MetricsPayload
-                { appName = config.applicationName,
-                  instanceId = config.instanceId,
+                { appName = applicationName config,
+                  instanceId = instanceId config,
                   start = lastBucketStart,
                   stop = now,
                   toggles = bucket
                 }
-    void <$> sendMetrics config.httpClientEnvironment config.apiKey metricsPayload
+    void <$> sendMetrics (httpClientEnvironment config) (apiKey config) metricsPayload
 
 -- | Check if a feature is enabled or not. Blocks until first feature toggle set is received. Blocks if the mutable metrics variables are empty.
 isEnabled ::
@@ -149,9 +150,9 @@ isEnabled ::
     m Bool
 isEnabled feature context = do
     config <- asks getUnleashConfig
-    state <- liftIO . readMVar $ config.state
+    state <- liftIO . readMVar $ state config
     enabled <- featureIsEnabled state feature context
-    liftIO $ modifyMVar_ config.metrics (\info -> pure $ (feature, enabled) : info)
+    liftIO $ modifyMVar_ (metrics config) (\info -> pure $ (feature, enabled) : info)
     pure enabled
 
 -- | Check if a feature is enabled or not. Returns false for all toggles until first toggle set is received. Blocks if the mutable metrics variables are empty.
@@ -165,11 +166,11 @@ tryIsEnabled ::
     m Bool
 tryIsEnabled feature context = do
     config <- asks getUnleashConfig
-    maybeState <- liftIO . tryReadMVar $ config.state
+    maybeState <- liftIO . tryReadMVar $ state config
     case maybeState of
         Just state -> do
             enabled <- featureIsEnabled state feature context
-            liftIO $ modifyMVar_ config.metrics (\info -> pure $ (feature, enabled) : info)
+            liftIO $ modifyMVar_ (metrics config) (\info -> pure $ (feature, enabled) : info)
             pure enabled
         Nothing -> pure False
 
@@ -184,7 +185,7 @@ getVariant ::
     m VariantResponse
 getVariant feature context = do
     config <- asks getUnleashConfig
-    state <- liftIO . readMVar $ config.state
+    state <- liftIO . readMVar $ state config
     featureGetVariant state feature context
 
 -- | Get a variant. Returns an empty variant until first toggle set is received.
@@ -198,7 +199,7 @@ tryGetVariant ::
     m VariantResponse
 tryGetVariant feature context = do
     config <- asks getUnleashConfig
-    maybeState <- liftIO . tryReadMVar $ config.state
+    maybeState <- liftIO . tryReadMVar $ state config
     case maybeState of
         Just state -> do
             featureGetVariant state feature context

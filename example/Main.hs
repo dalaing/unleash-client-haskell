@@ -79,13 +79,13 @@ statePoller = do
             >>= liftIO . \case
                 Left error -> putStrLn $ "Could not get state (" <> show error <> ")"
                 Right _ -> putStrLn "State received"
-        liftIO . threadDelay $ config.statePollIntervalInSeconds * 1000 * 1000
+        liftIO . threadDelay $ statePollIntervalInSeconds config * 1000 * 1000
 
 metricsPusher :: Program Void
 metricsPusher = do
     config <- asks getUnleashConfig
     forever do
-        liftIO . threadDelay $ config.metricsPushIntervalInSeconds * 1000 * 1000
+        liftIO . threadDelay $ metricsPushIntervalInSeconds config * 1000 * 1000
         pushMetrics
             >>= liftIO . \case
                 Left error -> putStrLn $ "Could not send metrics (" <> show error <> ")"
