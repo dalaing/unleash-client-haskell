@@ -95,6 +95,9 @@ data UnleashConfig = UnleashConfig
 class HasUnleash r where
     getUnleashConfig :: r -> UnleashConfig
 
+instance HasUnleash UnleashConfig where
+    getUnleashConfig = id
+
 -- | Register client for the Unleash server. Call this on application startup before calling the state poller and metrics pusher functions.
 registerClient :: (HasUnleash r, MonadReader r m, MonadIO m) => m (Either ClientError ())
 registerClient = do
