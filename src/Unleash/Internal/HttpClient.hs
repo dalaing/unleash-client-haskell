@@ -26,9 +26,9 @@ import Unleash.Internal.DomainTypes (Features, fromJsonFeatures, supportedStrate
 import Unleash.Internal.JsonTypes (FullMetricsBucket (..), FullMetricsPayload (..), FullRegisterPayload (..), MetricsPayload, RegisterPayload, YesAndNoes (..))
 import qualified Unleash.Internal.JsonTypes as UJT
 
-type Register = "register" :> Header "Authorization" Text :> Header "Content-Type" Text :> ReqBody '[CustomJSON] FullRegisterPayload :> PostNoContent
-type GetAllClientFeatures = "features" :> Header "Authorization" Text :> Get '[JSON] UJT.Features
-type SendMetrics = "metrics" :> Header "Authorization" Text :> ReqBody '[CustomJSON] FullMetricsPayload :> PostNoContent
+type Register = "client" :> "register" :> Header "Authorization" Text :> Header "Content-Type" Text :> ReqBody '[CustomJSON] FullRegisterPayload :> PostNoContent
+type GetAllClientFeatures = "client" :> "features" :> Header "Authorization" Text :> Get '[JSON] UJT.Features
+type SendMetrics = "client" :> "metrics" :> Header "Authorization" Text :> ReqBody '[CustomJSON] FullMetricsPayload :> PostNoContent
 type Api = GetAllClientFeatures :<|> SendMetrics :<|> Register
 
 getAllClientFeatures' :<|> sendMetrics' :<|> register' = client api
