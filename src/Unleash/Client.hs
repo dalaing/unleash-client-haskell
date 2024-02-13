@@ -155,7 +155,6 @@ isEnabled feature context = do
     config <- asks getUnleashConfig
     state <- liftIO . readMVar $ state config
     enabled <- featureIsEnabled state feature context
-    liftIO $ modifyMVar_ (metrics config) (\info -> pure $ (feature, enabled) : info)
     pure enabled
 
 -- | Check if a feature is enabled or not. Returns false for all toggles until first toggle set is received. Blocks if the mutable metrics variables are empty.
@@ -173,7 +172,6 @@ tryIsEnabled feature context = do
     case maybeState of
         Just state -> do
             enabled <- featureIsEnabled state feature context
-            liftIO $ modifyMVar_ (metrics config) (\info -> pure $ (feature, enabled) : info)
             pure enabled
         Nothing -> pure False
 
