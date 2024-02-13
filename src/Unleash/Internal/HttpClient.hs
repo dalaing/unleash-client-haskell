@@ -27,7 +27,7 @@ import Unleash.Internal.JsonTypes (FullMetricsBucket (..), FullMetricsPayload (.
 import qualified Unleash.Internal.JsonTypes as UJT
 
 type Register = "client" :> "register" :> Header "Authorization" Text :> Header "Content-Type" Text :> ReqBody '[CustomJSON] FullRegisterPayload :> PostNoContent
-type GetAllClientFeatures = "client" :> "features" :> Header "Authorization" Text :> Get '[JSON] UJT.Features
+type GetAllClientFeatures = "client" :> "features" :> Header "UNLEASH-APPNAME" Text :> Header "UNLEASH-INSTANCEID" Text :> Get '[JSON] UJT.Features
 type SendMetrics = "client" :> "metrics" :> Header "Authorization" Text :> ReqBody '[CustomJSON] FullMetricsPayload :> PostNoContent
 type Api = GetAllClientFeatures :<|> SendMetrics :<|> Register
 
@@ -62,9 +62,9 @@ register clientEnv apiKey (UJT.RegisterPayload appName instanceId started interv
                 }
     liftIO $ runClientM (register' apiKey (Just "application/json") fullRegisterPayload) clientEnv
 
-getAllClientFeatures :: MonadIO m => ClientEnv -> Maybe ApiKey -> m (Either ClientError Features)
-getAllClientFeatures clientEnv apiKey = do
-    eitherFeatures <- liftIO $ runClientM (getAllClientFeatures' apiKey) clientEnv
+getAllClientFeatures :: MonadIO m => ClientEnv -> Text -> Text -> m (Either ClientError Features)
+getAllClientFeatures clientEnv applicationName instanceId = do
+    eitherFeatures <- liftIO $ runClientM (getAllClientFeatures' (Just applicationName) (Just instanceId)) clientEnv
     pure $ fromJsonFeatures <$> eitherFeatures
 
 sendMetrics :: MonadIO m => ClientEnv -> Maybe ApiKey -> MetricsPayload -> m (Either ClientError NoContent)

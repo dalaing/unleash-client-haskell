@@ -117,7 +117,7 @@ registerClient = do
 pollToggles :: (HasUnleash r, MonadReader r m, MonadIO m) => m (Either ClientError ())
 pollToggles = do
     config <- asks getUnleashConfig
-    eitherFeatures <- getAllClientFeatures (httpClientEnvironment config) (apiKey config)
+    eitherFeatures <- getAllClientFeatures (httpClientEnvironment config) (applicationName config) (instanceId config)
     either (const $ pure ()) (updateState $ state config) eitherFeatures
     pure . void $ eitherFeatures
     where
